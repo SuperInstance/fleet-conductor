@@ -11,9 +11,14 @@
 //! `construct` / `avoidance-cascade-c` repositories are out of scope for
 //! this crate and remain as planned work.
 
+pub mod conductor;
 pub mod conservation;
 pub mod state;
 
+pub use conductor::{
+    Agent, AgentId, AgentKind, AgentSpec, Conductor, DrainOutcome, FleetSpec,
+    FleetState, KindSummary,
+};
 pub use conservation::{
     ConservationConfig, ConservationVerdict, DeferredReason,
 };
