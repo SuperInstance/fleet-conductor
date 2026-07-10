@@ -11,8 +11,12 @@
 //! `construct` / `avoidance-cascade-c` repositories are out of scope for
 //! this crate and remain as planned work.
 
+pub mod conservation;
 pub mod state;
 
+pub use conservation::{
+    ConservationConfig, ConservationVerdict, DeferredReason,
+};
 pub use state::{AgentState, TransitionError};
 
 /// Stub module retained for backward compatibility with the original
