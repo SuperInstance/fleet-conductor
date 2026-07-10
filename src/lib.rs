@@ -16,12 +16,10 @@ pub mod conservation;
 pub mod state;
 
 pub use conductor::{
-    Agent, AgentId, AgentKind, AgentSpec, Conductor, DrainOutcome, FleetSpec,
-    FleetState, KindSummary,
+    Agent, AgentId, AgentKind, AgentSpec, Conductor, DrainOutcome, FleetSpec, FleetState,
+    KindSummary,
 };
-pub use conservation::{
-    ConservationConfig, ConservationVerdict, DeferredReason,
-};
+pub use conservation::{ConservationConfig, ConservationVerdict, DeferredReason};
 pub use state::{AgentState, TransitionError};
 
 /// Stub module retained for backward compatibility with the original

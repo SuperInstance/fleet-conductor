@@ -58,9 +58,8 @@ impl ConservationConfig {
     /// `true` if the configured bounds describe a non-empty stable region.
     /// A NaN bound or an inverted gamma range makes the config unsound.
     pub fn is_sound(&self) -> bool {
-        let finite = self.gamma_min.is_finite()
-            && self.gamma_max.is_finite()
-            && self.eta_floor.is_finite();
+        let finite =
+            self.gamma_min.is_finite() && self.gamma_max.is_finite() && self.eta_floor.is_finite();
         finite && self.gamma_min <= self.gamma_max
     }
 
@@ -149,11 +148,7 @@ impl Default for ConservationConfig {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ConservationVerdict {
     /// The action may execute; these are the resulting $(\gamma, \eta, C)$.
-    Safe {
-        gamma: f64,
-        eta: f64,
-        c: f64,
-    },
+    Safe { gamma: f64, eta: f64, c: f64 },
     /// The action must be deferred; applying it would breach a bound.
     Deferred {
         reason: DeferredReason,

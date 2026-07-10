@@ -29,9 +29,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::{
-    AgentState, ConservationConfig, ConservationVerdict, DeferredReason, TransitionError,
-};
+use crate::{AgentState, ConservationConfig, ConservationVerdict, DeferredReason, TransitionError};
 
 /// Stable identifier for an agent within a conductor's fleet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -138,10 +136,7 @@ pub enum DrainOutcome {
     },
     /// The agent exists but is not in a drainable state
     /// ([`AgentState::Healthy`] or [`AgentState::Degraded`]).
-    NotDrainable {
-        id: AgentId,
-        state: AgentState,
-    },
+    NotDrainable { id: AgentId, state: AgentState },
     /// No agent with that id.
     NotFound(AgentId),
 }
@@ -257,10 +252,7 @@ impl Conductor {
             *summary.by_state.entry(a.state).or_insert(0) += 1;
         }
         for (kind, desired) in &self.desired {
-            by_kind
-                .entry(kind.clone())
-                .or_default()
-                .desired = Some(*desired);
+            by_kind.entry(kind.clone()).or_default().desired = Some(*desired);
         }
 
         let live = agents.iter().filter(|a| is_live(a.state)).count();
@@ -316,7 +308,11 @@ impl Conductor {
         // Draining this agent removes its eta contribution; gamma is nominal.
         let delta_eta = -self.eta_per_agent;
         match self.conservation.check(gamma, eta, 0.0, delta_eta) {
-            ConservationVerdict::Safe { eta: new_eta, c: new_c, .. } => {
+            ConservationVerdict::Safe {
+                eta: new_eta,
+                c: new_c,
+                ..
+            } => {
                 // Perform the legal transition Healthy|Degraded -> Draining.
                 let next = state
                     .transition(AgentState::Draining)
@@ -567,7 +563,10 @@ mod tests {
         c.reconcile(permissive_spec("inference", 5, 0));
         c.advance_lifecycle(); // Pending -> Starting
         c.advance_lifecycle(); // Starting -> Healthy
-        assert_eq!(c.observe().by_kind["inference"].by_state[&AgentState::Healthy], 5);
+        assert_eq!(
+            c.observe().by_kind["inference"].by_state[&AgentState::Healthy],
+            5
+        );
 
         // Now lower the desired count to 2 and reconcile.
         c.reconcile(permissive_spec("inference", 2, 0));
@@ -704,7 +703,10 @@ mod tests {
     #[test]
     fn drain_unknown_agent_returns_not_found() {
         let mut c = conductor();
-        assert_eq!(c.drain_agent(AgentId(99)), DrainOutcome::NotFound(AgentId(99)));
+        assert_eq!(
+            c.drain_agent(AgentId(99)),
+            DrainOutcome::NotFound(AgentId(99))
+        );
     }
 
     #[test]
@@ -767,16 +769,22 @@ mod tests {
     #[test]
     fn full_reconcile_advance_drain_terminate_lifecycle() {
         // End-to-end: empty -> reconcile -> advance -> drain -> terminate.
-        let mut c = Conductor::new().with_eta_per_agent(0.5).with_conservation(
-            ConservationConfig::new(-1.0, 1.0, 0.0),
-        );
+        let mut c = Conductor::new()
+            .with_eta_per_agent(0.5)
+            .with_conservation(ConservationConfig::new(-1.0, 1.0, 0.0));
         c.reconcile(spec("inference", 2, 0));
         // Both Pending.
-        assert_eq!(c.observe().by_kind["inference"].by_state[&AgentState::Pending], 2);
+        assert_eq!(
+            c.observe().by_kind["inference"].by_state[&AgentState::Pending],
+            2
+        );
         c.advance_lifecycle();
         c.advance_lifecycle();
         // Both Healthy.
-        assert_eq!(c.observe().by_kind["inference"].by_state[&AgentState::Healthy], 2);
+        assert_eq!(
+            c.observe().by_kind["inference"].by_state[&AgentState::Healthy],
+            2
+        );
         // Drain one.
         assert!(c.drain_agent(AgentId(0)).is_drained());
         assert_eq!(c.agent_state(AgentId(0)), Some(AgentState::Draining));
