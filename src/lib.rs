@@ -13,6 +13,7 @@
 
 pub mod conductor;
 pub mod conservation;
+pub mod server;
 pub mod state;
 
 pub use conductor::{
@@ -21,6 +22,7 @@ pub use conductor::{
 };
 pub use conservation::{ConservationConfig, ConservationVerdict, DeferredReason};
 pub use state::{AgentState, TransitionError};
+pub use server::ConductorServer;
 
 /// Stub module retained for backward compatibility with the original
 /// scaffold. Real functionality lives in the typed modules above.

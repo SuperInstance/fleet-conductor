@@ -32,7 +32,7 @@ use std::fmt;
 use crate::{AgentState, ConservationConfig, ConservationVerdict, DeferredReason, TransitionError};
 
 /// Stable identifier for an agent within a conductor's fleet.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub struct AgentId(pub u64);
 
 impl fmt::Display for AgentId {
@@ -45,7 +45,7 @@ impl fmt::Display for AgentId {
 pub type AgentKind = String;
 
 /// Desired configuration for a class of agents within a fleet.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct AgentSpec {
     /// Role of the agent (e.g. `"inference"`).
     pub kind: AgentKind,
@@ -56,7 +56,7 @@ pub struct AgentSpec {
 }
 
 /// The desired fleet state handed to [`Conductor::reconcile`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FleetSpec {
     /// Desired agent populations, one entry per kind.
     pub agents: Vec<AgentSpec>,
@@ -65,7 +65,7 @@ pub struct FleetSpec {
 }
 
 /// A single agent in the fleet.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Agent {
     pub id: AgentId,
     pub kind: AgentKind,
@@ -87,7 +87,7 @@ fn contributes_eta(state: AgentState) -> bool {
 }
 
 /// Per-kind summary returned by [`Conductor::observe`].
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct KindSummary {
     /// Desired live count from the last [`FleetSpec`], if a spec was given.
     pub desired: Option<usize>,
@@ -101,7 +101,7 @@ pub struct KindSummary {
 
 /// A snapshot of the fleet at a point in time, returned by
 /// [`Conductor::observe`].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FleetState {
     /// All agents, sorted by id for stable output.
     pub agents: Vec<Agent>,
@@ -118,7 +118,7 @@ pub struct FleetState {
 }
 
 /// Outcome of a [`Conductor::drain_agent`] call.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum DrainOutcome {
     /// The agent was moved to [`AgentState::Draining`].
     Drained {
