@@ -98,7 +98,7 @@ fn parse_request(stream: &mut TcpStream) -> std::io::Result<HttpRequest> {
     // Request line: "METHOD /path HTTP/1.1"
     let mut request_line = String::new();
     reader.read_line(&mut request_line)?;
-    let parts: Vec<&str> = request_line.trim().split_whitespace().collect();
+    let parts: Vec<&str> = request_line.split_whitespace().collect();
     if parts.len() < 2 {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -135,11 +135,7 @@ fn parse_request(stream: &mut TcpStream) -> std::io::Result<HttpRequest> {
             .read_to_string(&mut body)?;
     }
 
-    Ok(HttpRequest {
-        method,
-        path,
-        body,
-    })
+    Ok(HttpRequest { method, path, body })
 }
 
 fn write_response(stream: &mut TcpStream, status: u16, body: &str) -> std::io::Result<()> {
