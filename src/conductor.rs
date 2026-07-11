@@ -32,7 +32,9 @@ use std::fmt;
 use crate::{AgentState, ConservationConfig, ConservationVerdict, DeferredReason, TransitionError};
 
 /// Stable identifier for an agent within a conductor's fleet.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub struct AgentId(pub u64);
 
 impl fmt::Display for AgentId {

@@ -21,8 +21,8 @@ pub use conductor::{
     KindSummary,
 };
 pub use conservation::{ConservationConfig, ConservationVerdict, DeferredReason};
-pub use state::{AgentState, TransitionError};
 pub use server::ConductorServer;
+pub use state::{AgentState, TransitionError};
 
 /// Stub module retained for backward compatibility with the original
 /// scaffold. Real functionality lives in the typed modules above.
