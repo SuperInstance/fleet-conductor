@@ -8,20 +8,26 @@
 > conductor: the agent lifecycle state machine, the conservation-aware action
 > guard, and a desired-state reconciliation loop operating over an in-memory
 > fleet model. Everything in this crate is real Rust that compiles and is
-> covered by `cargo test` (42 tests).
+> covered by `cargo test` (45 tests).
 >
-> It is **not** a networked control plane. The following are genuinely out of
-> scope and remain planned work (they require infrastructure this crate does
-> not own):
+> It now includes a **real HTTP server** (`ConductorServer`) that exposes the
+> in-memory core over a TCP socket — two separate OS processes can coordinate
+> fleet state through genuine network I/O. This is verified by integration
+> tests that start the server on a real OS-assigned port and exercise it as a
+> TCP client, including one that spawns the server as an actual subprocess.
 >
-> - **Real node scheduling** — agents are spawned into an in-memory map, not
->   scheduled onto real nodes.
-> - **Live circuit breakers** — there is no network I/O and no real node error
->   rate to break on.
-> - **Integration with the external `construct` / `avoidance-cascade-c`
+> The following remain genuinely out of scope and planned work (🔮):
+>
+> - 🔮 **Real node scheduling** — agents are spawned into an in-memory map, not
+>   scheduled onto real nodes. The HTTP API exposes the conductor over the
+>   network, but agents are still in-memory entities, not processes on real
+>   machines.
+> - 🔮 **Live circuit breakers** — there is no real node error rate to break
+>   on.
+> - 🔮 **Integration with the external `construct` / `avoidance-cascade-c`
 >   repositories** — topology definitions and the deeper conservation dynamics
 >   are consumed from those crates, which are not available here.
-> - **Real γ / η computation** — the conservation *guard* is real and fully
+> - 🔮 **Real γ / η computation** — the conservation *guard* is real and fully
 >   tested, but the metrics that feed it are simple stand-ins (η is modeled as
 >   `active_agent_count * eta_per_agent`; γ is held at a nominal target). The
 >   real γ/η computation lives in the external conservation framework.
@@ -84,11 +90,47 @@ If a planned action would push $C$ outside the stable range $[C_{\min}, C_{\max}
 
 **Status: the guard is implemented and tested.** [`ConservationConfig::check`] takes a current (γ, η) pair, a planned (Δγ, Δη), and the config, and returns a [`ConservationVerdict`] (`Safe` or `Deferred` with the breached bound). [`Conductor::drain_agent`] routes every drain through this guard; a drain that would breach `eta_floor` is deferred, not executed. Tests cover the safe range, the eta-floor drain case, both γ bounds (inclusive), NaN inputs, an inverted config, and the "spawn a replacement first" recovery path.
 
-### Load Balancing & Circuit Breaking (planned)
+### Networked Operation (HTTP API) ✅
+
+The `ConductorServer` wraps the in-memory `Conductor` behind a minimal
+HTTP/1.1 server built on `std::net::TcpListener`. Two separate OS processes
+can coordinate fleet state through real TCP connections — no shared memory,
+no mocks.
+
+**Status: ✅ implemented and tested over real sockets.** The integration test
+in `tests/network_integration.rs` starts the server on a real OS-assigned
+port and exercises the full register → advance → drain → terminate lifecycle
+as a genuine TCP client, including conservation-guard enforcement (a drain
+that would breach `eta_floor` is correctly deferred over the network). A
+second test spawns the server as an actual subprocess (separate PID) and
+coordinates with it over a real socket.
+
+| Method | Path         | Body             | Action                          |
+|--------|--------------|------------------|---------------------------------|
+| GET    | `/health`    | —                | Liveness probe.                 |
+| GET    | `/fleet`     | —                | Observe current fleet state.    |
+| POST   | `/reconcile` | `FleetSpec` JSON | Reconcile toward desired state. |
+| POST   | `/advance`   | —                | Advance all agent lifecycles.   |
+| POST   | `/drain/:id` | —                | Drain an agent (guard-gated).   |
+| GET    | `/agent/:id` | —                | Get an agent's current state.   |
+
+```bash
+# Run the server
+cargo run --bin conductor-server -- 127.0.0.1:7878
+
+# In another terminal:
+curl http://127.0.0.1:7878/health
+curl -X POST http://127.0.0.1:7878/reconcile \
+  -H 'Content-Type: application/json' \
+  -d '{"agents":[{"kind":"inference","count":4,"layer":0}],"conservation":{"gamma_min":-0.5,"gamma_max":0.5,"eta_floor":0.3}}'
+curl http://127.0.0.1:7878/fleet
+```
+
+### Load Balancing & Circuit Breaking 🔮
 
 Agents are distributed across nodes using a **weighted round-robin** policy, where weights are inversely proportional to node load. Circuit breakers (from the `construct-coordination` dependency chain) prevent cascading failures: if a node's error rate exceeds threshold, the conductor stops routing new agents there and initiates drain procedures for existing ones.
 
-**Status: planned.** There are no real nodes, no network, and no live error rates in this in-memory core, so weighted round-robin placement and live circuit breaking are out of scope here.
+**Status: 🔮 planned.** The HTTP API exposes the conductor over the network, but agents are still in-memory entities — there are no real compute nodes to schedule onto and no live error rates to break on. Weighted round-robin placement and live circuit breaking remain out of scope.
 
 ### Complexity
 
@@ -143,7 +185,10 @@ cargo build --release
 # Run the example
 cargo run --example quickstart
 
-# Test
+# Run the HTTP server (networked mode)
+cargo run --release --bin conductor-server -- 127.0.0.1:7878
+
+# Test (includes real TCP socket integration tests)
 cargo test
 ```
 
@@ -209,20 +254,21 @@ pub enum  DrainOutcome { Drained { .. }, Deferred { .. }, NotDrainable { .. }, N
 pub struct AgentId(pub u64);
 ```
 
-### Planned (out of scope for this crate)
+### Planned 🔮 (out of scope for this crate)
 
 These remain framed as planned because they require infrastructure this crate
-does not own (real nodes, network I/O, the external `construct` /
+does not own (real compute nodes, the external `construct` /
 `avoidance-cascade-c` repositories):
 
-- Real **networked node scheduling** — weighted round-robin placement onto
-  live nodes.
-- Live **circuit breakers** that read real node error rates and trip.
-- **Integration with `construct`** for topology definitions and
+- 🔮 Real **node scheduling** — weighted round-robin placement onto live
+  compute nodes. The HTTP API exposes the conductor over the network, but
+  agents are still in-memory entities, not processes on real machines.
+- 🔮 Live **circuit breakers** that read real node error rates and trip.
+- 🔮 **Integration with `construct`** for topology definitions and
   `avoidance-cascade-c` for the deeper γ/η dynamics that feed the
   conservation guard.
-- Real **γ / η computation** from fleet telemetry (the guard itself is real;
-  the metrics fed to it are stand-ins here).
+- 🔮 Real **γ / η computation** from fleet telemetry (the guard itself is
+  real; the metrics fed to it are stand-ins here).
 
 ## Architecture Notes
 
@@ -230,8 +276,10 @@ fleet-conductor is the **control plane** of the SuperInstance fleet. It consumes
 
 > **In this crate**, the single-writer property is realized by the in-memory
 > `Conductor` owning its `HashMap<AgentId, Agent>`; all spawns, drains, and
-> lifecycle advances go through `&mut self`. The cross-repo topology and
-> conservation-framework integration described above are planned, not present.
+> lifecycle advances go through `&mut self`. The HTTP server (`ConductorServer`)
+> wraps the conductor in `Arc<Mutex<Conductor>>`, preserving single-writer
+> semantics across concurrent network clients. The cross-repo topology and
+> conservation-framework integration described above are 🔮 planned, not present.
 
 See: [SuperInstance Architecture](https://github.com/SuperInstance/SuperInstance/blob/main/ARCHITECTURE.md)
 
@@ -242,6 +290,9 @@ See: [SuperInstance Architecture](https://github.com/SuperInstance/SuperInstance
 | `src/state.rs` | `AgentState` enum + `transition()` guard (the full state machine). |
 | `src/conservation.rs` | `ConservationConfig` + `check()` bounds guard (`Safe` / `Deferred`). |
 | `src/conductor.rs` | `Conductor` with `observe` / `reconcile` / `spawn_agent` / `drain_agent` / `advance_lifecycle`. |
+| `src/server.rs` | `ConductorServer` — HTTP/1.1 server over real TCP (`std::net::TcpListener`), thread-per-connection. |
+| `src/bin/conductor-server.rs` | Standalone server binary (`cargo run --bin conductor-server`). |
+| `tests/network_integration.rs` | Real integration tests over TCP sockets (background thread + subprocess). |
 | `examples/quickstart.rs` | Runnable end-to-end example. |
 
 ## References
