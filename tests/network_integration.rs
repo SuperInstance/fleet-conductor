@@ -61,11 +61,7 @@ fn http_request(addr: SocketAddr, method: &str, path: &str, body: Option<&str>) 
         .expect("no status code in response");
 
     // Body is everything after the first \r\n\r\n.
-    let body = response
-        .split("\r\n\r\n")
-        .nth(1)
-        .unwrap_or("")
-        .to_string();
+    let body = response.split("\r\n\r\n").nth(1).unwrap_or("").to_string();
 
     (status, body)
 }
@@ -110,8 +106,16 @@ fn full_lifecycle_over_real_tcp_socket() {
     let fleet: serde_json::Value = serde_json::from_str(&body).expect("invalid JSON");
     assert_eq!(fleet["total"].as_u64().unwrap(), 4);
     assert_eq!(fleet["live"].as_u64().unwrap(), 4); // Pending is live
-    assert_eq!(fleet["by_kind"]["inference"]["observed"].as_u64().unwrap(), 4);
-    assert_eq!(fleet["by_kind"]["inference"]["by_state"]["Pending"].as_u64().unwrap(), 4);
+    assert_eq!(
+        fleet["by_kind"]["inference"]["observed"].as_u64().unwrap(),
+        4
+    );
+    assert_eq!(
+        fleet["by_kind"]["inference"]["by_state"]["Pending"]
+            .as_u64()
+            .unwrap(),
+        4
+    );
     assert_eq!(fleet["eta"].as_f64().unwrap(), 0.0); // no Healthy/Degraded agents yet
     eprintln!("[test] fleet observed: 4 Pending, eta=0.0");
 
@@ -132,7 +136,12 @@ fn full_lifecycle_over_real_tcp_socket() {
     let (status, body) = http_request(addr, "GET", "/fleet", None);
     assert_eq!(status, 200);
     let fleet: serde_json::Value = serde_json::from_str(&body).expect("invalid JSON");
-    assert_eq!(fleet["by_kind"]["inference"]["by_state"]["Healthy"].as_u64().unwrap(), 4);
+    assert_eq!(
+        fleet["by_kind"]["inference"]["by_state"]["Healthy"]
+            .as_u64()
+            .unwrap(),
+        4
+    );
     assert!((fleet["eta"].as_f64().unwrap() - 0.4).abs() < 1e-12);
     eprintln!("[test] fleet observed: 4 Healthy, eta=0.4");
 
@@ -164,8 +173,18 @@ fn full_lifecycle_over_real_tcp_socket() {
     let (status, body) = http_request(addr, "GET", "/fleet", None);
     assert_eq!(status, 200);
     let fleet: serde_json::Value = serde_json::from_str(&body).expect("invalid JSON");
-    assert_eq!(fleet["by_kind"]["inference"]["by_state"]["Draining"].as_u64().unwrap(), 1);
-    assert_eq!(fleet["by_kind"]["inference"]["by_state"]["Healthy"].as_u64().unwrap(), 3);
+    assert_eq!(
+        fleet["by_kind"]["inference"]["by_state"]["Draining"]
+            .as_u64()
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        fleet["by_kind"]["inference"]["by_state"]["Healthy"]
+            .as_u64()
+            .unwrap(),
+        3
+    );
     assert_eq!(fleet["live"].as_u64().unwrap(), 3); // Draining is not live
     eprintln!("[test] fleet observed: 1 Draining, 3 Healthy, live=3");
 
@@ -180,8 +199,18 @@ fn full_lifecycle_over_real_tcp_socket() {
     let (status, body) = http_request(addr, "GET", "/fleet", None);
     assert_eq!(status, 200);
     let fleet: serde_json::Value = serde_json::from_str(&body).expect("invalid JSON");
-    assert_eq!(fleet["by_kind"]["inference"]["by_state"]["Terminated"].as_u64().unwrap(), 1);
-    assert_eq!(fleet["by_kind"]["inference"]["by_state"]["Healthy"].as_u64().unwrap(), 3);
+    assert_eq!(
+        fleet["by_kind"]["inference"]["by_state"]["Terminated"]
+            .as_u64()
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        fleet["by_kind"]["inference"]["by_state"]["Healthy"]
+            .as_u64()
+            .unwrap(),
+        3
+    );
     assert_eq!(fleet["live"].as_u64().unwrap(), 3);
     assert!((fleet["eta"].as_f64().unwrap() - 0.3).abs() < 1e-12); // 3 active * 0.1
     eprintln!("[test] fleet observed: 1 Terminated, 3 Healthy, eta=0.3");
@@ -242,14 +271,16 @@ fn two_process_coordination_via_subprocess() {
         .expect("failed to read server output");
 
     let addr: SocketAddr = line
-        .trim()
         .split_whitespace()
         .last()
         .expect("no address in output")
         .parse()
         .expect("failed to parse address");
 
-    eprintln!("[test] server subprocess PID {} listening on {addr}", child.id());
+    eprintln!(
+        "[test] server subprocess PID {} listening on {addr}",
+        child.id()
+    );
 
     // We are now a genuinely separate OS process talking to the server over TCP.
     // No shared memory, no in-process calls — pure network I/O.
