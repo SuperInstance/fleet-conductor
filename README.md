@@ -39,7 +39,7 @@
 
 ## Why It Matters
 
-Running a fleet of AI agents across multiple machines is an operations problem with real consequences: agents hold conversational state, have active sessions with users, and must be migrated without dropping connections. A conductor provides the **control plane** — a single authority that knows the desired state ("20 agents across 5 nodes with γ ≈ 0.3") and reconciles it against the actual state ("18 agents, one node at γ = 0.8"). Without centralized coordination, agents can form split-brain scenarios, oversubscribe resources, or create avoidance cascades when multiple nodes independently decide to shed load. fleet-conductor pairs with `construct` for topology and `avoidance-cascade-c` for safety to provide a complete fleet management primitive.
+Running a fleet of AI agents across multiple machines is an operations problem with real consequences: agents hold conversational state, have active sessions with users, and must be migrated without dropping connections. A conductor provides the **control plane** — a single authority that knows the desired state ("20 agents across 5 nodes with γ ≈ 0.3") and reconciles it against the actual state ("18 agents, one node at γ = 0.8"). Without centralized coordination, agents can form split-brain scenarios, oversubscribe resources, or create avoidance cascades when multiple nodes independently decide to shed load. In the full system design, fleet-conductor is intended to pair with `construct` for topology and `avoidance-cascade-c` for safety to provide a fleet management primitive (these cross-repo integrations are 🔮 planned, not yet present in this crate).
 
 ## How It Works
 
@@ -295,6 +295,13 @@ See: [SuperInstance Architecture](https://github.com/SuperInstance/SuperInstance
 | `tests/network_integration.rs` | Real integration tests over TCP sockets (background thread + subprocess). |
 | `examples/quickstart.rs` | Runnable end-to-end example. |
 
+## Related Repos
+
+- [fleet-midi](https://github.com/SuperInstance/fleet-midi) — fleet-level event-bus and binary codec; provides the messaging transport layer that could carry conductor commands between nodes.
+- [nexus-edge-runtime](https://github.com/SuperInstance/nexus-edge-runtime) — edge runtime with fleet coordination, self-healing, and trust-engine modules; overlapping domain of distributed agent orchestration.
+- [vessel-bridge](https://github.com/SuperInstance/vessel-bridge) — hardware command/sensor bridge; a conductor would eventually issue drain and deploy commands through bridges of this kind.
+- [superinstance-architecture](https://github.com/SuperInstance/superinstance-architecture) — overarching architecture spec defining the fleet topology, conservation framework, and conductor's role in the system.
+
 ## References
 
 1. Burns, B. et al. (2015). "Borg, Omega, and Kubernetes." *ACM Queue* 14(1) — The reconciliation-loop pattern and desired-state convergence used by the conductor.
@@ -302,4 +309,4 @@ See: [SuperInstance Architecture](https://github.com/SuperInstance/SuperInstance
 
 ## License
 
-MIT
+MIT OR Apache-2.0
