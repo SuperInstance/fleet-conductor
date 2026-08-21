@@ -28,7 +28,7 @@ use std::fmt;
 ///
 /// Matches the field names given in the README:
 /// `ConservationConfig { gamma_min, gamma_max, eta_floor }`.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ConservationConfig {
     /// Minimum allowed value of $\gamma$.
     pub gamma_min: f64,
@@ -145,7 +145,7 @@ impl Default for ConservationConfig {
 }
 
 /// Result of a conservation check.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ConservationVerdict {
     /// The action may execute; these are the resulting $(\gamma, \eta, C)$.
     Safe { gamma: f64, eta: f64, c: f64 },
@@ -183,7 +183,7 @@ impl ConservationVerdict {
 }
 
 /// Why a planned action was deferred.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DeferredReason {
     /// $\gamma$ would drop below `gamma_min`.
     GammaBelowMin,

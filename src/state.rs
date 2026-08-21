@@ -15,7 +15,7 @@ use std::fmt;
 ///
 /// The canonical progression is
 /// `Pending -> Starting -> Healthy <-> Degraded -> Draining -> Terminated`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum AgentState {
     /// Allocation requested, not yet scheduled.
     Pending,
@@ -87,7 +87,7 @@ impl fmt::Display for AgentState {
 
 /// Error returned when a requested [`AgentState`] transition is not a legal
 /// edge of the state machine.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TransitionError {
     /// The state the agent was in when the illegal transition was requested.
     pub from: AgentState,

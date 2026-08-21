@@ -13,6 +13,7 @@
 
 pub mod conductor;
 pub mod conservation;
+pub mod server;
 pub mod state;
 
 pub use conductor::{
@@ -20,6 +21,7 @@ pub use conductor::{
     KindSummary,
 };
 pub use conservation::{ConservationConfig, ConservationVerdict, DeferredReason};
+pub use server::ConductorServer;
 pub use state::{AgentState, TransitionError};
 
 /// Stub module retained for backward compatibility with the original
