@@ -1,5 +1,9 @@
 # fleet-conductor — Distributed Agent Fleet Orchestration
 
+<p align="center">
+  <img src="assets/images/gallery-fleet-conductor.jpg" alt="A conductor's podium on a ship bridge at night — brass baton on a navy chart table, rows of amber signal lamps awaiting the downbeat" width="640">
+</p>
+
 **fleet-conductor** is a Rust library that orchestrates distributed agent fleets — coordinating the lifecycle (spawn, health-check, scale, terminate) of agents running across heterogeneous nodes. It provides the conductor primitive that sits above `construct` (topology definition) and below the fleet management UI, issuing commands like "deploy 10 inference agents to node-A" or "drain agent-7 for maintenance" while respecting conservation constraints.
 
 > ## Scope of this crate (read this first)
